@@ -18,8 +18,8 @@ class myStock:
         self.isInit   = False
 
     def buy(self, price, hand):
-        np.append(self.prices, price)
-        np.append(self.hands, hand)
+        self.prices = np.append(self.prices, price)
+        self.hands  = np.append(self.hands, hand)
         self.buyToday += hand
 
     def sell(self, hand):
@@ -50,9 +50,9 @@ class myStock:
         while len(self.mins) >= SaveDays:
             self.mins = self.mins[1:]
         count = self.countOperation()
-        np.append(self.opers, count)
-        np.append(self.maxs, max(self.pricesToday))
-        np.append(self.mins, min(self.pricesToday))
+        self.opers = np.append(self.opers, count)
+        self.maxs  = np.append(self.maxs, max(self.pricesToday))
+        self.mins  = np.append(self.mins, min(self.pricesToday))
         if self.opers.all() >= OperCut:
             self.isInit = True
         else:
