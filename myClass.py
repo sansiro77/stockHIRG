@@ -14,13 +14,13 @@ import csv
 GoodIndex = 1
 BadIndex = 0
 
-EmptyDataPath = '/Users/desmond/Famliy/Liu/Final/DataForTest/'
+EmptyDataPath = './'
 
-RawDataPath = '/Users/desmond/Famliy/Liu/Final/NewLi/'
+RawDataPath = './NewLi/'
 #RawDataPath = '/Volumes/wdf_backup/NewLi/'
-AllStockPath = '/Users/desmond/Famliy/Liu/Final/ParamterTest/'
-SCIStockPath = '/Users/desmond/Famliy/Liu/Final/BaseTest/'
-CompCodePath = '/Users/desmond/Famliy/Liu/Final/PlateIndex/'#ComponentStockCode'
+AllStockPath = './ParamterTest/'
+SCIStockPath = './BaseTest/'
+CompCodePath = './PlateIndex/'#ComponentStockCode'
 
 AllPlateIndexList = ['881166','881153','881157','881155','885403','885525','885431']
 
@@ -182,9 +182,9 @@ class MyAccount:
 
 #---------------------------------------------------------------------------------------------------------------------------
 class UnitStock:
-    InitCut = 0.01
-    OperCut = 2
-    SaveDays = 3
+    # InitCut = 0.01
+    # OperCut = 2
+    # SaveDays = 3
 
     def __init__(self, StockIndexStr):
         self.SCode      = StockIndexStr
@@ -357,15 +357,16 @@ class UnitStock:
         GetHowManyMoney = 0
         # in case this stock can not sell, but it never happend in here?
         # At before, this case is continue
-        if(self.SAbleToSellHands == 0 \
-            or self.isInPool == BadIndex):
-            return GetHowManyMoney
+        
         # get price and hands
         TmpEarlyPrice = self.SHistoryBuyPrice[-1]
         TmpHands = self.SHistoryBuyHands[-1]
+        self.SAbleToSellHands -= TmpHands
+        if(self.SAbleToSellHands < 0 \
+            or self.isInPool == BadIndex):
+            return GetHowManyMoney
         GetHowManyMoney = TmpEarlyPrice * TmpHands
         # update able to sell hands and history price
-        self.SAbleToSellHands -= TmpHands
         self.SHistoryBuyPrice = np.delete(self.SHistoryBuyPrice,-1,None)
         self.SHistoryBuyHands = np.delete(self.SHistoryBuyHands,-1,None)
         self.SHistoryPlateValue = np.delete(self.SHistoryPlateValue,-1,None)
@@ -502,7 +503,7 @@ def PlateDepTest(MyAccount,StockIndexList,iday,OUTPUT):
             TodayGoldSellValue = SellProportion * MyAccount.MyLastDayHoldValue
     else:
         SellProportion = 0.2
-        TodayGoldSellValue = SellProportion * MyAccount.MyLastDayHoldValue
+        TodayGoldSellValue = SellProportion * MyAccount.ReturnMyAssetInLastDay()
      
     print("Total gold ",iday,TodayGoldBuyValue,TodayGoldSellValue)
     TotalIntegralBuyMoney   = 0.
@@ -545,8 +546,8 @@ def PlateDepTest(MyAccount,StockIndexList,iday,OUTPUT):
         SingleSCIInfo = ReadSCICSVFile(MyAccount.MyOperaDateList[iday])
         ThisStepSCIIndex = SingleSCIInfo['open'][istep]
         ThisStepSCIRate = MyAccount.ReutrnLastSCIRate(ThisStepSCIIndex)
-        ActualBuyMoney = StandThisStepBuyMoney * (1. + ThisStepSCIRate * 20.)*FuncS
-        ActualSellMoney = StandThisStepSellMoney * (1. - ThisStepSCIRate * 40.)/FuncS
+        ActualBuyMoney = StandThisStepBuyMoney * (1. - ThisStepSCIRate * 20.)*FuncS
+        ActualSellMoney = StandThisStepSellMoney * (1. + ThisStepSCIRate * 40.)/FuncS
         #print("ActualBuyMoney ",ActualBuyMoney," ",StandThisStepBuyMoney," ",FuncS)
         #print("ActualSellMoney ",ActualSellMoney," ",StandThisStepSellMoney," ",FuncS)
         GoalSellMoneyList.append(ActualSellMoney)
@@ -573,7 +574,6 @@ def PlateDepTest(MyAccount,StockIndexList,iday,OUTPUT):
         ThisStepSellOp = 0
         if(MyAccount.ExcDay > 1):
             while(TmpThisStepSellMoney < ActualSellMoney):
-                ThisStepSellOp += 1
                 #print("sell this step gold money ",EachStepSellValue * float(step+1))
                 # if Buy or Sell list empty, then, resort all 
                 #print("begin cal sell table ",SellTableInLoop[0])
@@ -613,6 +613,7 @@ def PlateDepTest(MyAccount,StockIndexList,iday,OUTPUT):
                 else:
                     #print("sell this step finish money ",TotalIntegralSellMoney)
                     break
+                ThisStepSellOp += 1
         IntegralSellMoneyList.append(TotalIntegralSellMoney)
         # 3.1 while the cost not reach gold money we want, continue to buy
         # in while loop, only buy or sell one stock once!
@@ -846,11 +847,9 @@ def FindMaxOrMinInList(TableInLoop,BuyOrSell):
                 if(TableInLoop[ir][2] > TmpPriceRateAndApp):
                     #outputList = TableInLoop[ir]
                     WhichOneIsBuyOrSell = ir
-                    break
-                else:
-                    continue
+                    TmpPriceRateAndApp = TableInLoop[ir][2]
             else:
-                break    
+                continue
     if(BuyOrSell == BUYIndex):
         TmpReRateMin = TableInLoop[0][0]
         #outputList = TableInLoop[0]
@@ -859,11 +858,9 @@ def FindMaxOrMinInList(TableInLoop,BuyOrSell):
                 if(TableInLoop[ir][2] < TmpPriceRateAndApp):
                     #outputList = TableInLoop[ir]
                     WhichOneIsBuyOrSell = ir
-                    break
-                else:
-                    continue
+                    TmpPriceRateAndApp = TableInLoop[ir][2]
             else:
-                break   
+                continue
     #outputList = 
     #outputList = TableInLoop[WhichOneIsBuyOrSell].copy()
     return WhichOneIsBuyOrSell
